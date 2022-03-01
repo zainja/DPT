@@ -5,7 +5,6 @@ import re
 import numpy as np
 import cv2
 import torch
-
 from PIL import Image
 
 
@@ -182,7 +181,6 @@ def write_depth(path, depth, bits=1, absolute_depth=False):
     else:
         depth_min = depth.min()
         depth_max = depth.max()
-
         max_val = (2 ** (8 * bits)) - 1
 
         if depth_max - depth_min > np.finfo("float").eps:

@@ -16,8 +16,6 @@ def depth_two_uint8_to_float(top_bits, bottom_bits):
 class RHD(data.Dataset):
     def __init__(self, img_dir, anno_path, transform):
 
-        self.__image_list = []
-        self.__depth_list = []
         self.img_dir = img_dir
         self.anno_dist = pickle.load(open(anno_path, "rb"))
         self.labels = [""] * len(self.anno_dist)

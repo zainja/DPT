@@ -1,3 +1,4 @@
+import timm
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -151,3 +152,45 @@ class DPTSegmentationModel(DPT):
 
         if path is not None:
             self.load(path)
+
+
+class HandModel(nn.Module):
+    def __init__(self):
+        super(HandModel, self).__init__()
+        self.encoder = timm.create_model('vit_large_patch16_384', pretrained=True)
+        self.head = nn.Sequential(
+            nn.Linear(
+                1000,
+                512,
+            ),
+            nn.ReLU(),
+            nn.Dropout(0.2),
+            nn.Linear(
+                512,
+                512,
+            ),
+            nn.ReLU(),
+            nn.Dropout(0.2),
+            nn.Linear(
+                512,
+                512,
+            ),
+            nn.ReLU(),
+            nn.Linear(
+                512,
+                512,
+            ),
+            nn.ReLU(),
+            nn.Dropout(0.2),
+            nn.Linear(
+                512,
+                512,
+            ),
+            nn.ReLU(),
+            nn.Dropout(0.2),
+            nn.Linear(512, 63)
+        )
+
+    def forward(self, x):
+        x = self.encoder(x)
+        return self.head(x)

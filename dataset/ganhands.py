@@ -12,15 +12,25 @@ def process_relative_coords_file(coords_text):
     return np.array(coords).astype("float32")
 
 
-class GanHands(data.Dataset):
-    def __init__(self, directory, num_objects, transform):
+NO_OBJECT_SIZE = 142
+OBJECT_SIZE = 185
+OBJECTS_IN_FILE = 1024
 
+
+class GanHands(data.Dataset):
+    def __init__(self, directory, transform):
         self.directory = directory
-        self.labels = [""] * num_objects
-        for i in range(len(self.labels)):
-            self.labels[i] = "{:04d}".format(i + 1)
+        self.labels = []
+        for folder in range(1, NO_OBJECT_SIZE):
+            for i in range(1, OBJECTS_IN_FILE + 1):
+                self.labels.append("noObject/{:04d}/{:04d}".format(folder, i))
+        for folder in range(1, OBJECT_SIZE):
+            for i in range(1, OBJECTS_IN_FILE + 1):
+                self.labels.append("withObject/{:04d}/{:04d}".format(folder, i))
+
+        print(self.labels[:3])
         self.__transform = transform
-        self.__length = num_objects
+        self.__length = len(self.labels)
 
     def __len__(self):
         return self.__length

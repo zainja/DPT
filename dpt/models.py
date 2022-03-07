@@ -155,12 +155,16 @@ class DPTSegmentationModel(DPT):
 
 
 class HandModel(nn.Module):
-    def __init__(self):
+    def __init__(self, encoder=None, encoder_size=1000):
         super(HandModel, self).__init__()
-        self.encoder = timm.create_model('vit_large_patch16_384', pretrained=True)
+        if encoder is None:
+            self.encoder = timm.create_model('vit_large_patch16_384', pretrained=True)
+        else:
+            self.encoder = encoder
+
         self.head = nn.Sequential(
             nn.Linear(
-                1000,
+                encoder_size,
                 512,
             ),
             nn.ReLU(),

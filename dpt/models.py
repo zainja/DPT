@@ -208,12 +208,14 @@ class HMapTrackNet(DPT):
         if not self.to_coords:
             return prediction
         
-        u_v_21 = torch.zeros((prediction.shape[1], 2))
+        u_v_21 = torch.zeros((prediction[0],prediction.shape[1], 2))
         for i in range(prediction.shape[0]):
             hmap = prediction[i]
-            (max_rows, col) = torch.max(hmap, 1)
-            row = torch.argmax(max_rows)
-            col = col[row]
-            u_v_21[i, 0] = col
-            u_v_21[i, 1] = row
+            for j in range(hmap.shape[0]):
+                joint_map = hmap[j]
+                (max_rows, col) = torch.max(joint_map, 1)
+                row = torch.argmax(max_rows)
+                col = col[row]
+                u_v_21[i, j, 0] = col
+                u_v_21[i, j, 1] = row
         return u_v_21

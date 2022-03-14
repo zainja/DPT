@@ -48,15 +48,18 @@ class GanHands(data.Dataset):
 
         image_file = self.labels[index] + "_color_composed.png"
         image = np.asarray(Image.open(os.path.join(self.directory, image_file)))
-
+        image_size = image.shape
         relative_coords_file = self.labels[index] + "_joint_pos.txt"
         absolute_coords_file =self.labels[index] + "_joint_pos_global.txt"
         uv_coords_file = self.labels[index] + "_joint2D.txt"
-        
+
         uv_coords_file = open(os.path.join(self.directory, uv_coords_file)).read()
         uv_coords = process_coords_file(uv_coords_file)
         uv_coords = np.reshape(uv_coords, (21, 2))
         
+        coords_u = np.clip(uv_coords[:,0], 0, image_size[1] - 1)
+        coords_v = np.clip(uv_coords[:,1], 0, image_size[0] - 1)
+        uv_coords = np.stack([coords_u, coords_v], -1)
         relative_coords_file = open(os.path.join(self.directory, relative_coords_file)).read()
         rel_coords = process_coords_file(relative_coords_file)
         rel_coords = np.reshape(rel_coords, (21, 3))

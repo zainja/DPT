@@ -34,13 +34,11 @@ def get_root_and_scale(absolute_coords):
 
 def heatmap(size, uv_coords, sigma, depth_vals=None):
     uv_coords =  uv_coords.astype(np.int32)
-    heatmap_layers = np.zeros(size)
-    heatmap_layers = np.expand_dims(heatmap_layers, -1)
-    heatmap_layers = np.tile(heatmap_layers, (1,1,21))
+    h, w = size[0], size[1]
+    heatmap_layers = np.zeros((h, w, 21))
     heatmap_layers = list(heatmap_layers)
-
-    for i, uv in enumerate(uv_coords):
-        heatmap_layers[uv[1]][uv[0]][i] = 1 if depth_vals is None else depth_vals[i] * 100
+    for i in range(21):
+        heatmap_layers[uv_coords[i,1]][uv_coords[i,0]][i] = 1 if depth_vals is None else depth_vals[i] * 100    
     heatmap_layers = np.array(heatmap_layers)
     heatmap_layers = cv2.GaussianBlur(heatmap_layers, (0,0), sigma)
     return heatmap_layers

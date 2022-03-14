@@ -212,7 +212,7 @@ class TrackingResize(Resize):
         sample["heatmap"] = cv2.resize(
             sample["heatmap"],
             (width, height),
-            interpolation=cv2.INTER_NEAREST,
+            interpolation=cv2.INTER_CUBIC,
         )
 
         sample["uv_coords"] = sample["uv_coords"] * (width/original_width)

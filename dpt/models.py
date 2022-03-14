@@ -188,19 +188,14 @@ class HandNet(DPT):
 
 class HMapTrackNet(DPT):
     def __init__(self):
+        features = 256
         head = nn.Sequential(
-            nn.Conv2d(256, 128, kernel_size=3, padding=1),
-            nn.BatchNorm2d(128),
+            nn.Conv2d(features, features // 2, kernel_size=3, stride=1, padding=1),
             nn.LeakyReLU(True),
-            nn.MaxPool2d(2, 2),
-
-            nn.Conv2d(128, 64, kernel_size=3, padding=1),
-            nn.BatchNorm2d(64),
+            Interpolate(scale_factor=2, mode="bilinear", align_corners=True),
+            nn.Conv2d(features // 2, 64, kernel_size=3, stride=1, padding=1),
             nn.LeakyReLU(True),
-            nn.MaxPool2d(2, 2),
-            nn.Dropout(0.1, False),
-            nn.Conv2d(64, 21, kernel_size=1)
-
+            nn.Conv2d(64, 21, kernel_size=1, stride=1, padding=0),
         )
         super().__init__(head)
         self.to_coords = False

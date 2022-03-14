@@ -2,6 +2,9 @@ import timm
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import numpy as np
+
+from dataset.helpers import heatmap
 
 from .base_model import BaseModel
 from .blocks import (
@@ -154,47 +157,68 @@ class DPTSegmentationModel(DPT):
             self.load(path)
 
 
-class HandModel(nn.Module):
-    def __init__(self, encoder=None, encoder_size=1000):
-        super(HandModel, self).__init__()
-        if encoder is None:
-            self.encoder = timm.create_model('vit_large_patch16_384', pretrained=True)
-        else:
-            self.encoder = encoder
-
-        self.head = nn.Sequential(
-            nn.Linear(
-                encoder_size,
-                512,
-            ),
-            nn.ReLU(),
+class HandNet(DPT):
+    def __init__(self):
+        head = nn.Sequential(
+            nn.Conv2d(256, 128, 3, 1),
+            nn.LeakyReLU(),
+            nn.MaxPool2d(3, 2),            
+            nn.Conv2d(128, 64, 3, 1),
+            nn.LeakyReLU(),
+            nn.Conv2d(64, 32, 3, 1),
+            nn.LeakyReLU(),
+            nn.MaxPool2d(3, 2),
+            nn.Conv2d(32, 16, 3, 1),
+            nn.LeakyReLU(),
+            nn.MaxPool2d(3, 2),
+            nn.Conv2d(16, 8, 3, 1),
+            nn.LeakyReLU(),
+            nn.MaxPool2d(3, 2),
+            nn.Flatten(),
+            nn.Linear(512, 512),
+            nn.LeakyReLU(),
             nn.Dropout(0.2),
-            nn.Linear(
-                512,
-                512,
-            ),
-            nn.ReLU(),
-            nn.Dropout(0.2),
-            nn.Linear(
-                512,
-                512,
-            ),
-            nn.ReLU(),
-            nn.Linear(
-                512,
-                512,
-            ),
-            nn.ReLU(),
-            nn.Dropout(0.2),
-            nn.Linear(
-                512,
-                512,
-            ),
-            nn.ReLU(),
+            nn.Linear(512, 512),
+            nn.LeakyReLU(),
             nn.Dropout(0.2),
             nn.Linear(512, 63)
-        )
 
+        )
+        super().__init__(head)
+
+class HMapTrackNet(DPT):
+    def __init__(self):
+        head = nn.Sequential(
+            nn.Conv2d(256, 128, kernel_size=3, padding=1),
+            nn.BatchNorm2d(128),
+            nn.LeakyReLU(True),
+            nn.MaxPool2d(2, 2),
+
+            nn.Conv2d(128, 64, kernel_size=3, padding=1),
+            nn.BatchNorm2d(64),
+            nn.LeakyReLU(True),
+            nn.MaxPool2d(2, 2),
+            nn.Dropout(0.1, False),
+            nn.Conv2d(64, 21, kernel_size=1)
+
+        )
+        super().__init__(head)
+        self.to_coords = False
+    
+    def set_to_coords(self, to_coords):
+        self.to_coords = to_coords
+    
     def forward(self, x):
-        x = self.encoder(x)
-        return self.head(x)
+        prediction = super().forward(x)
+        if not self.to_coords:
+            return prediction
+        
+        u_v_21 = torch.zeros((prediction.shape[1], 2))
+        for i in range(prediction.shape[0]):
+            hmap = prediction[i]
+            (max_rows, col) = torch.max(hmap, 1)
+            row = torch.argmax(max_rows)
+            col = col[row]
+            u_v_21[i, 0] = col
+            u_v_21[i, 1] = row
+        return u_v_21

@@ -192,6 +192,45 @@ class Resize(object):
 
         return sample
 
+class TrackingResize(Resize):
+    def __init__(self, width, height, resize_target=True, keep_aspect_ratio=False, ensure_multiple_of=1, resize_method="lower_bound", image_interpolation_method=cv2.INTER_AREA):
+        super().__init__(width, height, resize_target, keep_aspect_ratio, ensure_multiple_of, resize_method, image_interpolation_method)
+        self.__image_interpolation_method = image_interpolation_method
+    def __call__(self, sample):
+        original_width = sample["image"].shape[1]
+
+        width, height = self.get_size(
+            sample["image"].shape[1], sample["image"].shape[0]
+        )
+
+        sample["image"] = cv2.resize(
+            sample["image"],
+            (width, height),
+            interpolation=self.__image_interpolation_method,
+        )
+
+        sample["heatmap"] = cv2.resize(
+            sample["heatmap"],
+            (width, height),
+            interpolation=cv2.INTER_NEAREST,
+        )
+
+        sample["uv_coords"] = sample["uv_coords"] * (width/original_width)
+        return sample
+
+class PrepareForTrackingNet(object):
+    def __init__(self):
+        pass
+    
+    def __call__(self, sample):
+    
+        image = np.transpose(sample["image"], (2, 0, 1))
+        sample["image"] = np.ascontiguousarray(image).astype(np.float32)
+
+        heatmap = np.transpose(sample["heatmap"], (2, 0, 1))
+        sample["heatmap"] = np.ascontiguousarray(heatmap).astype(np.float32)
+
+        return sample
 
 class NormalizeImage(object):
     """Normlize image by given mean and std."""
